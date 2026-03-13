@@ -4,17 +4,16 @@
  */
 package lab7_binarios;
 
-/**
+/*
+ * 
+ *
  *
  * @author emyca
  */
 public class Lab7_Binarios {
-
-    /**
-     * @param args the command line arguments
-     */
     public static void main(String[] args) {
-        // TODO code application logic here
+        ReproductorMusica GUI= new ReproductorMusica();
+        GUI.setVisible(true);
     }
     
 }
