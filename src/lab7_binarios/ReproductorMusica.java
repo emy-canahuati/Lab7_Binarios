@@ -261,8 +261,13 @@ public class ReproductorMusica extends JFrame {
                 raf.readUTF();
                 raf.readUTF();
                 raf.readUTF();
-                raf.readUTF();
-                raf.readUTF();
+
+                int audioLen = raf.readInt();
+                raf.skipBytes(audioLen);
+
+                int imgLen = raf.readInt();
+                raf.skipBytes(imgLen);
+
                 if (raf.readBoolean()) {
                     modeloLista.addElement(nombre);
                 }
