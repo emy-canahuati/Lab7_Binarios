@@ -5,34 +5,32 @@ import java.awt.*;
 import java.io.IOException;
 import javax.swing.filechooser.*;
 import java.io.RandomAccessFile;
+import java.io.File;
 
 public class ReproductorMusica extends JFrame {
 
     private JPanel panelDerechoContenedor;
     private CardLayout cardLayout;
     private JList<String> listaCanciones;
-    private DefaultListModel<String> modeloLista; // Faltaba declarar el modelo
+    private DefaultListModel<String> modeloLista;
     private ReproductorLogica logica;
 
-    // Componentes de Detalles
     private JLabel lblImagen, lblNombre, lblArtista, lblDuracion, lblGenero;
 
-    // Variables de los JTextFields
     private JTextField txtNombre, txtArtista, txtDuracion, txtGenero, txtRutaMusica, txtRutaImagen;
     private String pathCancion = "", pathImagen = "";
 
     public ReproductorMusica() {
         logica = new ReproductorLogica();
-        logica.cargarCancionesDefault(); // Carga las canciones iniciales si el archivo está vacío
+        logica.cargarCancionesDefault();
 
         setTitle("Reproductor de Musica MP3");
         setSize(900, 600);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(null);
-        setLocationRelativeTo(null); // Centrar ventana
+        setLocationRelativeTo(null);
         getContentPane().setBackground(new Color(245, 245, 245));
 
-        // --- SIDEBAR FIJO (IZQUIERDA) ---
         JPanel sidebar = new JPanel(null);
         sidebar.setBounds(0, 0, 280, 600);
         sidebar.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, Color.LIGHT_GRAY));
@@ -48,10 +46,8 @@ public class ReproductorMusica extends JFrame {
         scroll.setBounds(20, 55, 240, 300);
         sidebar.add(scroll);
 
-        // Actualizar la JList con los datos del archivo binario al iniciar
         actualizarListaVisual();
 
-        // Botón Select: Carga la canción seleccionada de la JList
         JButton btnSelect = new JButton("Select");
         btnSelect.setBounds(20, 370, 240, 35);
         btnSelect.addActionListener(e -> {
@@ -59,13 +55,11 @@ public class ReproductorMusica extends JFrame {
             if (seleccion != null) {
                 try {
                     if (logica.Select(seleccion)) {
-                        // Actualizar UI con datos de la lógica
                         lblNombre.setText(logica.getNombre());
                         lblArtista.setText("Artista: " + logica.getArtista());
-                        lblDuracion.setText("Duración: " + (logica.getDuracion()) + " min");
+                        lblDuracion.setText("Duración: " + logica.getDuracion());
                         lblGenero.setText("Género: " + logica.getGenero());
                         lblImagen.setIcon(logica.getImagen());
-                        
                         cardLayout.show(panelDerechoContenedor, "DETALLES");
                     }
                 } catch (IOException ex) {
@@ -89,7 +83,6 @@ public class ReproductorMusica extends JFrame {
 
         add(sidebar);
 
-        // --- PANEL DERECHO DINÁMICO ---
         cardLayout = new CardLayout();
         panelDerechoContenedor = new JPanel(cardLayout);
         panelDerechoContenedor.setBounds(280, 0, 620, 600);
@@ -167,7 +160,7 @@ public class ReproductorMusica extends JFrame {
         txtRutaMusica = new JTextField();
         txtRutaImagen = new JTextField();
 
-        String[] etiquetas = {"Nombre:", "Artista:", "Duración (ms):", "Género:", "Archivo MP3:", "Imagen:"};
+        String[] etiquetas = {"Nombre:", "Artista:", "Duración (min/seg):", "Género:", "Archivo MP3:", "Imagen:"};
         JTextField[] fields = {txtNombre, txtArtista, txtDuracion, txtGenero, txtRutaMusica, txtRutaImagen};
 
         int y = 50;
@@ -210,18 +203,12 @@ public class ReproductorMusica extends JFrame {
 
         btnGuardar.addActionListener(e -> {
             try {
-                String nom = txtNombre.getText();
-                String art = txtArtista.getText();
-                String dur = txtDuracion.getText();
-                String gen = txtGenero.getText();
-
-                logica.Add(pathCancion, nom, art, dur, pathImagen, gen);
-                actualizarListaVisual(); // Refrescar la JList
-
-                JOptionPane.showMessageDialog(this, "Canción guardada con éxito.");
+                logica.Add(pathCancion, txtNombre.getText(), txtArtista.getText(), txtDuracion.getText(), pathImagen, txtGenero.getText());
+                actualizarListaVisual();
+                JOptionPane.showMessageDialog(this, "Canción guardada");
                 cardLayout.show(panelDerechoContenedor, "DETALLES");
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this, "Error en los datos. La duración debe ser numérica.");
+                JOptionPane.showMessageDialog(this, "Error al guardar");
             }
         });
 
@@ -249,10 +236,10 @@ public class ReproductorMusica extends JFrame {
             try {
                 int res = logica.Remove(txtRemove.getText());
                 if (res == 1) {
-                    JOptionPane.showMessageDialog(this, "Eliminada con éxito.");
+                    JOptionPane.showMessageDialog(this, "Eliminada.");
                     actualizarListaVisual();
                 } else {
-                    JOptionPane.showMessageDialog(this, "No encontrada o ya borrada.");
+                    JOptionPane.showMessageDialog(this, "No encontrada");
                 }
             } catch (IOException ex) {
                 ex.printStackTrace();
@@ -265,22 +252,24 @@ public class ReproductorMusica extends JFrame {
 
     private void actualizarListaVisual() {
         modeloLista.clear();
-        try (RandomAccessFile raf = new RandomAccessFile("src/ListaDeReproduccion.emp", "r")) {
+        try {
+            File archivo = new File("src/ListaDeReproduccion.emp");
+            if (!archivo.exists()) return;
+            RandomAccessFile raf = new RandomAccessFile(archivo, "r");
             while (raf.getFilePointer() < raf.length()) {
                 String nombre = raf.readUTF();
-                raf.readUTF(); // saltar ruta
-                raf.readUTF(); // saltar artista
-                raf.readLong(); // saltar duracion
-                raf.readUTF(); // saltar imagen
-                raf.readUTF(); // saltar genero
+                raf.readUTF();
+                raf.readUTF();
+                raf.readUTF();
+                raf.readUTF();
+                raf.readUTF();
                 if (raf.readBoolean()) {
                     modeloLista.addElement(nombre);
                 }
             }
+            raf.close();
         } catch (IOException e) {
-            JOptionPane.showMessageDialog(null,"Error actualizando lista: " + e.getMessage());
+            e.printStackTrace();
         }
     }
-
-    
 }

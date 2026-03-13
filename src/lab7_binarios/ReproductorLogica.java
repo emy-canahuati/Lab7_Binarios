@@ -4,22 +4,20 @@
  */
 package lab7_binarios;
 
-
-/**
- *
- * @author emyca
- */
-
 import java.io.*;
 import javazoom.jl.player.Player;
 import javax.swing.ImageIcon;
 import javax.swing.JOptionPane;
 import java.awt.Image;
 
+/**
+ *
+ * @author emyca
+ */
+
 public class ReproductorLogica {
     private RandomAccessFile listaReproduccion;
     
-    // Datos de la canción seleccionada
     private String artistaCancionSelec;
     private String rutaCancionSelec;
     private ImageIcon imagenCancionSelec;
@@ -27,28 +25,23 @@ public class ReproductorLogica {
     private String generoCancionSelec;
     private String duracionCancionSelec;
 
-    // Control de Audio (JLayer)
     private Player player;
     private Thread hiloReproduccion;
     private boolean estaReproduciendo = false;
     private boolean estaPausado = false;
     
-    // Control de Pausa (Bytes)
     private FileInputStream fis;
     private long totalBytes = 0;
     private long bytesPausados = 0;
 
     public ReproductorLogica() {
         try {
-            // Asegúrate de que la ruta coincida con tu estructura de NetBeans
             File archivoBin = new File("src/ListaDeReproduccion.emp");
             listaReproduccion = new RandomAccessFile(archivoBin, "rw");
         } catch (FileNotFoundException e) {
-            JOptionPane.showMessageDialog(null,"Error: No se pudo crear/abrir el archivo binario.");
+            JOptionPane.showMessageDialog(null,"Error: No se pudo abrir el archivo binario.");
         }
     }
-
-    // --- GESTIÓN DE ARCHIVO BINARIO ---
 
     public void Add(String rutaCancion, String nombre, String artista, String duracion, String rutaImagen, String genero) throws IOException {
         listaReproduccion.seek(listaReproduccion.length());
@@ -58,15 +51,14 @@ public class ReproductorLogica {
         listaReproduccion.writeUTF(duracion);
         listaReproduccion.writeUTF(rutaImagen);
         listaReproduccion.writeUTF(genero);
-        listaReproduccion.writeBoolean(true); // Activa por defecto
+        listaReproduccion.writeBoolean(true);
     }
 
     public void cargarCancionesDefault() {
         try {
             if (listaReproduccion.length() == 0) {
-                // Rutas de ejemplo (ajusta a tus archivos reales)
                 Add("src/CancionesDefault/cancion1.mp3", "Cheekbones", "Arrows in Action", "2:27", "src/CancionesDefault/cheekbones.jpg", "Pop-Rock");
-                Add("src/Cancionesdefault/cancion2.mp3", "Dime Como Quieres", "Christian Nodal", "2:49", "src/CancionesDefault/dime.jpg", "Regional Mexicano");
+                Add("src/CancionesDefault/cancion2.mp3", "Figure You Out", "VOILA", "3:19", "src/CancionesDefault/figure.jpg", "Indie");
             }
         } catch (IOException e) {
             JOptionPane.showMessageDialog(null, "Error al cargar defaults: " + e.getMessage());
@@ -91,8 +83,6 @@ public class ReproductorLogica {
                 this.duracionCancionSelec = duracion;
                 this.generoCancionSelec = genero;
                 setImagen(img);
-                
-                // Si cambiamos de canción, reseteamos el estado de pausa
                 Stop(); 
                 return true;
             }
@@ -104,31 +94,26 @@ public class ReproductorLogica {
         listaReproduccion.seek(0);
         while (listaReproduccion.getFilePointer() < listaReproduccion.length()) {
             String name = listaReproduccion.readUTF();
-            listaReproduccion.readUTF(); // ruta
-            listaReproduccion.readUTF(); // artista
-            listaReproduccion.readUTF(); // duracion
-            listaReproduccion.readUTF(); // imagen
-            listaReproduccion.readUTF(); // genero
+            listaReproduccion.readUTF(); 
+            listaReproduccion.readUTF(); 
+            listaReproduccion.readUTF(); 
+            listaReproduccion.readUTF(); 
+            listaReproduccion.readUTF(); 
             
             long posicion = listaReproduccion.getFilePointer();
             boolean activo = listaReproduccion.readBoolean();
 
             if (name.equals(nombre)) {
-                if (!activo) 
-                    return 2;
-                
-                if (name.equals(nombreCancionSelec)) 
-                    Stop();
+                if (!activo) return 2;
+                if (name.equals(nombreCancionSelec)) Stop();
                 
                 listaReproduccion.seek(posicion);
                 listaReproduccion.writeBoolean(false);
                 return 1;
             }
         }
-        return 3; // No encontrado
+        return 3;
     }
-
-    // --- MOTOR DE REPRODUCCIÓN (JLAYER) ---
 
     public void Play() {
         if (rutaCancionSelec == null || rutaCancionSelec.isEmpty()) {
@@ -146,7 +131,6 @@ public class ReproductorLogica {
                 BufferedInputStream bis = new BufferedInputStream(fis);
 
                 if (estaPausado) {
-                    // Saltamos lo que ya escuchamos
                     fis.skip(totalBytes - bytesPausados);
                 }
 
@@ -171,7 +155,7 @@ public class ReproductorLogica {
     public void Pause() {
         if (estaReproduciendo && player != null) {
             try {
-                bytesPausados = fis.available(); // Guardamos el remanente
+                bytesPausados = fis.available();
                 player.close();
                 estaReproduciendo = false;
                 estaPausado = true;
@@ -190,37 +174,17 @@ public class ReproductorLogica {
         bytesPausados = 0;
     }
 
-    // --- GETTERS ---
-
     public void setImagen(String ruta) {
         ImageIcon icon = new ImageIcon(ruta);
         Image img = icon.getImage().getScaledInstance(250, 250, Image.SCALE_SMOOTH);
         this.imagenCancionSelec = new ImageIcon(img);
     }
 
-    public ImageIcon getImagen() { 
-        return imagenCancionSelec; 
-    }
-    
-    public String getArtista() { 
-        return artistaCancionSelec; 
-    }
-    
-    public String getGenero() { 
-        return generoCancionSelec; 
-    }
-    
-    public String getNombre() { 
-        return nombreCancionSelec; 
-    }
-    
-    public String getDuracion() { 
-        return duracionCancionSelec; 
-    }
+    public ImageIcon getImagen() { return imagenCancionSelec; }
+    public String getArtista() { return artistaCancionSelec; }
+    public String getGenero() { return generoCancionSelec; }
+    public String getNombre() { return nombreCancionSelec; }
+    public String getDuracion() { return duracionCancionSelec; }
 
-    public void cerrar() throws IOException {
-        Stop();
-        if (listaReproduccion != null) 
-            listaReproduccion.close();
-    }
+    
 }
